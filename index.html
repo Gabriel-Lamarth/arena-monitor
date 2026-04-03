@@ -3,100 +3,97 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SENTINEL | Platform Monitor</title>
+    <title>SENTINEL | Enterprise Monitor</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    
-    <script>
-        // Configuração de cores GitHub
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        gh_bg: '#f6f8fa',
-                        gh_border: '#d0d7de',
-                        gh_text: '#24292f',
-                        gh_blue: '#0969da',
-                        gh_green: '#1a7f37',
-                        gh_red: '#cf222e',
-                    },
-                    fontFamily: { sans: ['Inter', 'sans-serif'] }
-                }
-            }
-        }
-    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #f6f8fa; color: #24292f; }
-        .gh-card { background: white; border: 1px solid #d0d7de; border-radius: 6px; }
-        .gh-header { background: #f6f8fa; border-bottom: 1px solid #d0d7de; padding: 8px 16px; border-radius: 6px 6px 0 0; font-size: 12px; font-weight: 600; color: #57606a; }
-        .chart-box { height: 220px; width: 100%; position: relative; }
-        /* Remove vibração da lista */
-        #listaTransacoes { transition: all 0.3s ease; }
+        body { background-color: #0d1117; color: #c9d1d9; font-family: 'Inter', sans-serif; }
+        .gh-card { background: #161b22; border: 1px solid #30363d; border-radius: 6px; }
+        .gh-header { background: #161b22; border-bottom: 1px solid #30363d; padding: 10px 16px; border-radius: 6px 6px 0 0; color: #8b949e; font-size: 12px; font-weight: 600; }
+        .chart-container { height: 250px; width: 100%; position: relative; padding: 10px; }
+        .stat-label { font-size: 11px; color: #8b949e; text-transform: uppercase; font-weight: 600; }
+        .stat-value { font-size: 20px; font-weight: 600; color: #f0f6fc; }
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 10px; }
     </style>
 </head>
-<body class="p-3 md:p-6 text-sm font-sans">
+<body class="p-4 md:p-6">
 
-    <header class="flex justify-between items-center mb-6 pb-3 border-b border-gh_border">
+    <header class="flex justify-between items-center mb-6 border-b border-[#30363d] pb-4">
         <div class="flex items-center gap-3">
-            <svg class="w-8 h-8 text-gh_text" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 01-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 010 8c0-4.42 3.58-8 8-8Z"></path></svg>
-            <h1 class="text-xl font-semibold tracking-tight text-gh_text">Sentinel <span class="text-xs font-normal text-slate-500">/ Intelligence Monitor v18.0</span></h1>
+            <div class="p-2 bg-[#21262d] rounded-md border border-[#30363d]">
+                <svg height="24" viewBox="0 0 16 16" width="24" fill="#f0f6fc"><path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 01-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 010 8c0-4.42 3.58-8 8-8Z"></path></svg>
+            </div>
+            <div>
+                <h1 class="text-lg font-semibold text-[#f0f6fc]">Sentinel <span class="text-xs font-normal text-[#8b949e]">v19.0-dark</span></h1>
+                <p class="text-[10px] text-[#3fb950] font-mono uppercase tracking-widest">● Core_System_Active</p>
+            </div>
         </div>
-        <div class="text-right text-xs text-slate-500 font-mono">
-            <div id="clock">00:00:00</div>
-            <div id="status" class="text-gh_green font-medium">Synced • Live</div>
+        <div class="text-right">
+            <div id="clock" class="text-sm font-mono text-[#f0f6fc]">00:00:00</div>
+            <div id="uptime" class="text-[10px] text-[#8b949e]">ESTABLISHING SYNC...</div>
         </div>
     </header>
 
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
         
-        <div class="md:col-span-1 space-y-4">
+        <div class="md:col-span-3 space-y-4">
             <div class="gh-card p-4">
-                <p class="text-[11px] text-slate-500 uppercase font-medium">Available Coins</p>
-                <div id="moedas" class="text-2xl font-semibold text-gh_text mt-1">---</div>
+                <span class="stat-label">Available Coins</span>
+                <div id="moedas" class="stat-value text-[#f0f6fc]">---</div>
             </div>
-            <div class="gh-card p-4 border-l-4 border-l-gh_blue">
-                <p class="text-[11px] text-slate-500 uppercase font-medium">GLUE Reserve</p>
-                <div id="glues" class="text-2xl font-semibold text-gh_blue mt-1">---</div>
+            <div class="gh-card p-4 border-l-4 border-[#388bfd]">
+                <span class="stat-label">Glue Reserve</span>
+                <div id="glues" class="stat-value text-[#388bfd]">---</div>
             </div>
             <div class="gh-card p-4">
-                <p class="text-[11px] text-slate-500 uppercase font-medium">Profit Matrix</p>
-                <div class="grid grid-cols-2 gap-2 mt-2 pt-2 border-t border-gh_border">
-                    <div><p class="text-[10px] text-slate-500">Avg Buy</p><p id="mediaCompra" class="font-semibold text-gh_green">---</p></div>
-                    <div class="text-right"><p class="text-[10px] text-slate-500">Avg Sell</p><p id="mediaVenda" class="font-semibold text-gh_red">---</p></div>
+                <span class="stat-label">Session Profit</span>
+                <div id="lucroSessao" class="stat-value text-[#3fb950]">C$ 0.00</div>
+                <div class="mt-2 flex justify-between text-[10px]">
+                    <span id="winRate" class="text-[#8b949e]">Effectiveness: 0%</span>
+                    <span id="txCount" class="text-[#8b949e]">0 ops</span>
+                </div>
+            </div>
+            <div class="gh-card p-4 bg-[#0d1117]/50 border-dashed">
+                <span class="stat-label mb-2 block">Bot Intelligence</span>
+                <div class="space-y-2 text-[11px]">
+                    <div class="flex justify-between"><span>Frequency:</span><span class="text-[#f0f6fc]">850ms</span></div>
+                    <div class="flex justify-between"><span>Strategy:</span><span class="text-[#f0f6fc]">Adaptive_Grid</span></div>
+                    <div class="flex justify-between"><span>Tolerance:</span><span class="text-[#f0f6fc]">1.2% Rev</span></div>
                 </div>
             </div>
         </div>
 
-        <div class="md:col-span-3 gh-card">
-            <div class="gh-header flex justify-between">
-                <span>Market Price Feed (200 pts)</span>
-                <span id="precoAtual" class="font-mono text-gh_text font-bold text-[13px]">---</span>
+        <div class="md:col-span-9 gh-card">
+            <div class="gh-header flex justify-between items-center">
+                <span>Market Feed & Price Discovery</span>
+                <div class="flex gap-4">
+                    <span id="vPreco" class="text-[#f0f6fc] font-mono">---</span>
+                </div>
             </div>
-            <div class="p-3 chart-box"><canvas id="marketChart"></canvas></div>
-        </div>
-    </div>
-
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        
-        <div class="gh-card flex flex-col justify-center items-center p-6 text-center space-y-3">
-            <p class="text-[11px] text-slate-500 uppercase font-medium tracking-wide">Next Operations Gatilho</p>
-            <div>
-                <span class="text-xs text-gh_green font-medium">🟢 Buy_Zone:</span>
-                <p id="alvoCompra" class="text-3xl font-bold text-gh_text">---</p>
-            </div>
-            <div class="w-full border-t border-gh_border pt-3">
-                <span class="text-xs text-gh_red font-medium">🔴 Net_Sell:</span>
-                <p id="alvoVenda" class="text-3xl font-bold text-gh_text">---</p>
+            <div class="chart-container">
+                <canvas id="marketChart"></canvas>
             </div>
         </div>
 
-        <div class="lg:col-span-2 gh-card">
-            <div class="gh-header">Live Transaction Log</div>
-            <div id="txLog" class="p-2 space-y-1.5 max-h-[220px] overflow-y-auto font-mono text-xs">
-                <p class="text-center py-10 text-slate-400 italic">Syncing with system core...</p>
+        <div class="md:col-span-4 gh-card p-6 flex flex-col justify-center gap-6">
+            <div class="text-center">
+                <span class="stat-label block mb-1">Buy Trigger Zone</span>
+                <div id="vBuy" class="text-4xl font-bold text-[#3fb950] tracking-tighter">---</div>
+            </div>
+            <div class="border-t border-[#30363d] pt-6 text-center">
+                <span class="stat-label block mb-1">Target Sell (Net)</span>
+                <div id="vSell" class="text-4xl font-bold text-[#f85149] tracking-tighter">---</div>
+            </div>
+        </div>
+
+        <div class="md:col-span-8 gh-card">
+            <div class="gh-header">Ledger History</div>
+            <div id="txLog" class="p-2 space-y-1 max-h-[300px] overflow-y-auto font-mono text-[11px]">
+                <div class="text-center py-10 text-[#484f58]">Listening for transactions...</div>
             </div>
         </div>
 
@@ -116,88 +113,99 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // CHARTS CONFIG (ESTILO GITHUB INSPIRED)
-        const ctxM = document.getElementById('marketChart').getContext('2d');
-        const marketChart = new Chart(ctxM, {
+        const ctx = document.getElementById('marketChart').getContext('2d');
+        const marketChart = new Chart(ctx, {
             type: 'line',
-            data: { labels: Array(200).fill(''), datasets: [
-                {
-                    label: 'Price',
+            data: {
+                labels: Array(200).fill(''),
+                datasets: [{
+                    label: 'GLUE Price',
                     data: [],
-                    borderColor: '#0969da', // gh_blue
+                    borderColor: '#58a6ff',
                     borderWidth: 2,
                     pointRadius: 0,
                     fill: true,
-                    backgroundColor: 'rgba(9, 105, 218, 0.05)',
-                    tension: 0.3 // Suavização
-                }
-                // Linhas médias serão adicionadas dinamicamente
-            ]},
+                    backgroundColor: 'rgba(88, 166, 255, 0.05)',
+                    tension: 0.3
+                }]
+            },
             options: {
                 responsive: true, maintainAspectRatio: false, animation: false,
-                scales: { 
-                    x: { display: false }, 
-                    y: { grid: { color: '#e1e4e8' }, ticks: { color: '#57606a', font: { size: 10 } } } 
+                scales: {
+                    x: { display: false },
+                    y: { 
+                        grid: { color: '#21262d' },
+                        ticks: { color: '#8b949e', font: { size: 10 } },
+                        position: 'right'
+                    }
                 },
                 plugins: { legend: { display: false } }
             }
         });
 
-        let lastTxHash = "";
+        let lastHash = "";
+        const startTime = Date.now();
 
         db.ref('monitor').on('value', (snap) => {
             const d = snap.val();
             if(!d) return;
 
-            // Updates Textos
-            document.getElementById('moedas').innerText = Number(d.moedas).toLocaleString();
-            document.getElementById('glues').innerText = d.glues.toFixed(1);
-            document.getElementById('precoAtual').innerText = Number(d.precoAtual).toLocaleString();
-            document.getElementById('alvoCompra').innerText = d.alvoCompra.toFixed(0);
-            document.getElementById('alvoVenda').innerText = d.alvoVenda.toFixed(0);
+            // UI UPDATES
+            document.getElementById('moedas').innerText = Number(d.moedas).toLocaleString('pt-BR');
+            document.getElementById('glues').innerText = d.glues.toFixed(2);
+            document.getElementById('vPreco').innerText = `C$ ${Number(d.precoAtual).toLocaleString('pt-BR')}`;
+            document.getElementById('vBuy').innerText = d.alvoCompra.toFixed(0);
+            document.getElementById('vSell').innerText = d.alvoVenda.toFixed(0);
             document.getElementById('clock').innerText = new Date(d.lastUpdate).toLocaleTimeString();
+            
+            // Uptime
+            const up = Math.floor((Date.now() - startTime) / 1000 / 60);
+            document.getElementById('uptime').innerText = `SESSION: ${up}m`;
 
-            // GRÁFICO: Preço, Média Compra, Média Venda
+            // CHART REFRESH
             if(d.hPreco) {
-                // Atualiza dados de preço
                 marketChart.data.datasets[0].data = d.hPreco;
-
-                // Cálculos Médios p/ Gráfico
-                const compras = d.transacoes ? d.transacoes.filter(t => t.tipo === 'COMPRA') : [];
-                const avgCompra = compras.length > 0 ? (compras.reduce((a,b)=>a+b.preco,0)/compras.length) : 0;
-                document.getElementById('mediaCompra').innerText = avgCompra > 0 ? avgCompra.toFixed(0) : '---';
-
-                const vendas = d.transacoes ? d.transacoes.filter(t => t.tipo === 'VENDA') : [];
-                const avgVenda = vendas.length > 0 ? (vendas.reduce((a,b)=>a+b.preco,0)/vendas.length) : 0;
-                document.getElementById('mediaVenda').innerText = avgVenda > 0 ? avgVenda.toFixed(0) : '---';
-
-                // Desenhar Mídias no Gráfico (Annotations manuais via Chart.js plugins são melhores, mas p/ simplicidade usaremos datasets extras)
-                if (avgCompra > 0) {
-                    marketChart.data.datasets[1] = { label: 'Avg Buy', data: Array(200).fill(avgCompra), borderColor: '#1a7f3730', borderWidth: 1.5, pointRadius: 0, borderDash: [5, 5], fill: false };
-                }
-                if (avgVenda > 0) {
-                    marketChart.data.datasets[2] = { label: 'Avg Sell', data: Array(200).fill(avgVenda), borderColor: '#cf222e30', borderWidth: 1.5, pointRadius: 0, borderDash: [5, 5], fill: false };
-                }
-
-                marketChart.update('none'); // Update sem animação
+                marketChart.update('none');
             }
 
-            // Log Estabilizado
-            const txHash = JSON.stringify(d.transacoes);
-            if(txHash !== lastTxHash) {
-                lastTxHash = txHash;
-                const html = d.transacoes.map(t => `
-                    <div class="flex justify-between items-center py-1.5 px-3 border-b border-gh_border last:border-b-0 hover:bg-[#f6f8fa30]">
-                        <span class="font-medium text-gh_text flex items-center gap-2">
-                            <span class="w-2 h-2 rounded-full ${t.tipo === 'VENDA' ? 'bg-gh_red' : 'bg-gh_green'}"></span>
-                            <b>${t.tipo}</b> ${t.qtd} un @ ${t.preco.toLocaleString()}
-                        </span>
-                        <span class="text-slate-500 font-mono text-[11px]">${t.data}</span>
-                    </div>
-                `).join('');
-                document.getElementById('txLog').innerHTML = html;
+            // ANALYTICS & LOG
+            const currentHash = JSON.stringify(d.transacoes);
+            if(currentHash !== lastHash) {
+                lastHash = currentHash;
+                renderAdvancedLog(d.transacoes, d.hLucro);
             }
         });
+
+        function renderAdvancedLog(txs, hLucro) {
+            if(!txs) return;
+            
+            // Calc Efetividade (Vendas lucrativas)
+            const vendas = txs.filter(t => t.tipo === 'VENDA');
+            const compras = txs.filter(t => t.tipo === 'COMPRA');
+            document.getElementById('txCount').innerText = `${txs.length} ops`;
+            
+            if(hLucro && hLucro.length > 0) {
+                const totalLucro = hLucro[hLucro.length - 1];
+                const el = document.getElementById('lucroSessao');
+                el.innerText = `C$ ${totalLucro.toLocaleString('pt-BR')}`;
+                el.classList.toggle('text-[#f85149]', totalLucro < 0);
+            }
+
+            const html = txs.map(t => `
+                <div class="flex justify-between items-center py-2 px-3 border-b border-[#21262d] last:border-0 hover:bg-[#1f242c]">
+                    <div class="flex items-center gap-3">
+                        <span class="w-2 h-2 rounded-full ${t.tipo === 'VENDA' ? 'bg-[#f85149]' : 'bg-[#3fb950]'}"></span>
+                        <span class="${t.tipo === 'VENDA' ? 'text-[#f85149]' : 'text-[#3fb950]'} font-bold">${t.tipo}</span>
+                        <span class="text-[#f0f6fc]">${t.qtd} un</span>
+                    </div>
+                    <div class="flex gap-4 items-center">
+                        <span class="text-[#8b949e]">@ ${t.preco.toLocaleString('pt-BR')}</span>
+                        <span class="text-[#484f58] text-[9px]">${t.data}</span>
+                    </div>
+                </div>
+            `).join('');
+            document.getElementById('txLog').innerHTML = html;
+        }
     </script>
 </body>
 </html>
