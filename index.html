@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentinel | Dashboard v13.1</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+        body { font-family: 'JetBrains+Mono', monospace; }
+        .card { background: #1a202c; border-radius: 8px; padding: 1.5rem; border: 1px solid #2d3748; }
+    </style>
+</head>
+<body class="bg-black text-gray-200 p-4 md:p-8">
+    <header class="mb-8 flex justify-between items-center border-b border-gray-800 pb-4">
+        <h1 class="text-2xl font-bold text-blue-500">🛡️ SENTINEL <span class="text-xs text-gray-500">v13.1</span></h1>
+        <div id="status" class="text-xs px-2 py-1 rounded bg-green-900 text-green-300 animate-pulse">LIVE</div>
+    </header>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div class="card border-l-4 border-yellow-500">
+            <p class="text-xs text-gray-500 uppercase">Moedas</p>
+            <h2 id="moedas" class="text-2xl font-bold">---</h2>
+        </div>
+        <div class="card border-l-4 border-blue-400">
+            <p class="text-xs text-gray-500 uppercase">Estoque GLUE</p>
+            <h2 id="glues" class="text-2xl font-bold">---</h2>
+        </div>
+        <div class="card border-l-4 border-purple-500">
+            <p class="text-xs text-gray-500 uppercase">Lote Venda</p>
+            <h2 id="lote" class="text-2xl font-bold text-purple-400">---</h2>
+        </div>
+        <div class="card border-l-4 border-red-500">
+            <p class="text-xs text-gray-500 uppercase">Taxa Real</p>
+            <h2 id="taxa" class="text-2xl font-bold">---</h2>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="card">
+            <h3 class="text-gray-500 text-xs uppercase mb-4 text-center">Preço Atual</h3>
+            <div id="precoAtual" class="text-5xl font-bold text-center text-white my-4">---</div>
+            <div class="text-center text-xs text-gray-600">Última att: <span id="time">--:--:--</span></div>
+        </div>
+
+        <div class="card flex flex-col justify-center space-y-4">
+            <div class="flex justify-between items-center border-b border-gray-700 pb-2">
+                <span class="text-green-500 text-sm">🟢 Teto Compra:</span>
+                <span id="alvoCompra" class="text-xl font-bold text-green-400">---</span>
+            </div>
+            <div class="flex justify-between items-center border-b border-gray-700 pb-2">
+                <span class="text-red-500 text-sm">🔴 Alvo Venda:</span>
+                <span id="alvoVenda" class="text-xl font-bold text-red-400">---</span>
+            </div>
+            <div class="flex justify-between items-center">
+                <span class="text-gray-500 text-sm">💰 Lucro Alvo:</span>
+                <span class="text-sm font-bold text-white">3.0% (Líquido)</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // CONFIGURAÇÃO DO SEU FIREBASE (COPIE DO CONSOLE)
+        const firebaseConfig = {
+            apiKey: "SUA-API-KEY",
+            authDomain: "SEU-PROJETO.firebaseapp.com",
+            databaseURL: "https://SEU-PROJETO.firebaseio.com",
+            projectId: "SEU-PROJETO",
+            storageBucket: "SEU-PROJETO.appspot.com",
+            messagingSenderId: "---",
+            appId: "---"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        // OUVINTE EM TEMPO REAL
+        db.ref('monitor').on('value', (snap) => {
+            const data = snap.val();
+            if(!data) return;
+
+            document.getElementById('moedas').innerText = Number(data.moedas).toLocaleString('pt-BR');
+            document.getElementById('glues').innerText = data.glues.toFixed(1);
+            document.getElementById('lote').innerText = data.disponivelVenda;
+            document.getElementById('taxa').innerText = (data.taxa * 100).toFixed(2) + '%';
+            document.getElementById('precoAtual').innerText = Number(data.precoAtual).toLocaleString('pt-BR');
+            document.getElementById('alvoCompra').innerText = data.alvoCompra.toFixed(0);
+            document.getElementById('alvoVenda').innerText = data.alvoVenda.toFixed(0);
+            
+            const date = new Date(data.lastUpdate);
+            document.getElementById('time').innerText = date.toLocaleTimeString();
+        });
+    </script>
+</body>
+</html>
