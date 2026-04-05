@@ -3,150 +3,176 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SENTINEL | Fractal Monitor v22</title>
+    <title>SENTINEL v1.0 | Telemetry</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #0d1117; color: #c9d1d9; font-family: 'Inter', sans-serif; }
-        .gh-card { background: #161b22; border: 1px solid #30363d; border-radius: 6px; }
-        .gh-header { background: #161b22; border-bottom: 1px solid #30363d; padding: 10px 16px; border-radius: 6px 6px 0 0; color: #8b949e; font-size: 11px; font-weight: 600; text-transform: uppercase; }
-        .chart-container { height: 280px; width: 100%; padding: 10px; }
-        .stat-val { font-size: 22px; font-weight: 600; color: #f0f6fc; letter-spacing: -0.5px; }
-        .indicator { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+        body { background-color: #0d1117; color: #c9d1d9; font-family: 'JetBrains Mono', monospace; }
+        .gh-card { background: #161b22; border: 1px solid #30363d; border-radius: 6px; position: relative; overflow: hidden; }
+        .regime-bull { border-top: 4px solid #3fb950; }
+        .regime-bear { border-top: 4px solid #f85149; }
+        .regime-sideways { border-top: 4px solid #388bfd; }
+        .chart-h { height: 400px; }
+        .stat-label { font-size: 10px; color: #8b949e; font-weight: bold; text-transform: uppercase; }
+        .stat-value { font-size: 20px; font-weight: 700; color: #f0f6fc; }
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-thumb { background: #30363d; }
     </style>
 </head>
-<body class="p-4 md:p-8">
+<body class="p-4 md:p-6">
 
-    <header class="flex justify-between items-center mb-6 border-b border-[#30363d] pb-4">
-        <div class="flex items-center gap-4">
-            <div class="p-2 bg-[#21262d] border border-[#30363d] rounded">
-                <svg height="20" viewBox="0 0 16 16" width="20" fill="#f0f6fc"><path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 01-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 010 8c0-4.42 3.58-8 8-8Z"></path></svg>
-            </div>
-            <div>
-                <h1 class="text-md font-semibold">Sentinel Fractal <span class="text-[#8b949e] font-normal">/ Engine v22.0</span></h1>
-                <div class="flex items-center text-[10px] text-[#3fb950] font-mono"><span class="indicator bg-[#3fb950] animate-pulse"></span>ACTIVE_TRADING</div>
-            </div>
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
+        <div>
+            <h1 class="text-xl font-bold flex items-center gap-2">
+                <span class="text-blue-500">SENTINEL</span> v1.0 
+                <span id="status-pulse" class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+            </h1>
+            <p class="text-[10px] text-[#8b949e]">PREDICTIVE ENGINE / UFMG CONTROL SYSTEMS</p>
         </div>
-        <div id="clock" class="font-mono text-xs text-[#8b949e]">00:00:00</div>
-    </header>
+        <div class="flex gap-4">
+            <div id="market-regime" class="px-4 py-1 rounded bg-[#21262d] border border-[#30363d] text-xs font-bold">---</div>
+            <div id="server-time" class="text-xs text-[#8b949e] py-1">00:00:00</div>
+        </div>
+    </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+    <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-4">
         
         <div class="md:col-span-3 space-y-4">
             <div class="gh-card p-4">
-                <p class="text-[10px] font-bold text-[#8b949e] uppercase">Balance (Coins)</p>
-                <div id="moedas" class="stat-val">---</div>
-            </div>
-            <div class="gh-card p-4 border-l-4 border-[#388bfd]">
-                <p class="text-[10px] font-bold text-[#8b949e] uppercase">Inventory (GLUE)</p>
-                <div id="glues" class="stat-val text-[#388bfd]">---</div>
+                <p class="stat-label">Available Balance</p>
+                <div id="coins" class="stat-value text-yellow-500">---</div>
             </div>
             <div class="gh-card p-4">
-                <p class="text-[10px] font-bold text-[#8b949e] uppercase">Weighted Avg Price</p>
-                <div id="avgPrice" class="stat-val text-[#f0f6fc]">---</div>
-                <p class="text-[9px] text-[#8b949e] mt-1">Break-even including fees</p>
+                <p class="stat-label">GLUE Inventory</p>
+                <div id="glues" class="stat-value text-blue-400">---</div>
+            </div>
+            <div class="gh-card p-4">
+                <p class="stat-label">Avg. Buy Price (DCA)</p>
+                <div id="avgPrice" class="stat-value">---</div>
+                <div class="w-full bg-[#21262d] h-1 mt-2 rounded-full overflow-hidden">
+                    <div id="rsi-bar" class="h-full bg-blue-500" style="width: 50%"></div>
+                </div>
+                <p class="text-[9px] text-[#8b949e] mt-1 flex justify-between">
+                    <span>RSI Strength</span>
+                    <span id="rsi-val">50</span>
+                </p>
             </div>
         </div>
 
-        <div class="md:col-span-9 gh-card">
-            <div class="gh-header flex justify-between">
-                <span>Real-time Market Discovery</span>
-                <span id="precoAtual" class="text-[#f0f6fc] font-mono">---</span>
+        <div class="md:col-span-9 gh-card p-2">
+            <div class="flex justify-between px-4 py-2 border-b border-[#30363d] mb-2">
+                <span class="text-[10px] font-bold text-[#8b949e]">REAL-TIME MARKET SPECTRUM</span>
+                <span id="current-price" class="text-sm font-bold text-[#f0f6fc]">---</span>
             </div>
-            <div class="chart-container">
-                <canvas id="marketChart"></canvas>
-            </div>
-        </div>
-
-        <div class="md:col-span-4 gh-card p-6 flex flex-col justify-around text-center">
-            <div>
-                <p class="text-[10px] font-bold text-[#3fb950] uppercase mb-1">Buy Rebound Zone</p>
-                <div id="alvoCompra" class="text-4xl font-bold tracking-tighter">---</div>
-            </div>
-            <div class="h-[1px] bg-[#30363d] my-4"></div>
-            <div>
-                <p class="text-[10px] font-bold text-[#f85149] uppercase mb-1">Profit Peak Target</p>
-                <div id="alvoVenda" class="text-4xl font-bold tracking-tighter">---</div>
+            <div class="chart-h">
+                <canvas id="mainChart"></canvas>
             </div>
         </div>
 
-        <div class="md:col-span-8 gh-card">
-            <div class="gh-header">Fractal Execution Ledger</div>
-            <div id="txLog" class="p-2 space-y-1 max-h-[280px] overflow-y-auto font-mono text-[11px]">
-                <p class="text-center py-12 text-[#484f58]">Listening to Fractal Engine...</p>
+        <div class="md:col-span-12 gh-card">
+            <div class="px-4 py-2 border-b border-[#30363d] bg-[#161b22] text-[10px] font-bold flex justify-between">
+                <span>EXECUTION LEDGER (v1.0)</span>
+                <span class="text-blue-500">LIVE FEED</span>
             </div>
+            <div id="tx-history" class="p-2 max-h-64 overflow-y-auto text-[11px]">
+                </div>
         </div>
-
     </div>
 
     <script>
+        // --- CONFIGURAÇÃO FIREBASE ---
         const firebaseConfig = {
             apiKey: "AIzaSyCafWPTpVdi1WRIIXOmDTl7xqOzlXkkwz0",
-            authDomain: "arenasentinel-cc345.firebaseapp.com",
             databaseURL: "https://arenasentinel-cc345-default-rtdb.firebaseio.com",
-            projectId: "arenasentinel-cc345",
-            storageBucket: "arenasentinel-cc345.firebasestorage.app",
-            messagingSenderId: "839795085957",
-            appId: "1:839795085957:web:ac787cc883563d40960fec"
+            projectId: "arenasentinel-cc345"
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        const ctx = document.getElementById('marketChart').getContext('2d');
-        const marketChart = new Chart(ctx, {
+        // --- INICIALIZAÇÃO DO GRÁFICO ---
+        const ctx = document.getElementById('mainChart').getContext('2d');
+        const mainChart = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: Array(200).fill(''),
-                datasets: [{
-                    data: [], borderColor: '#58a6ff', borderWidth: 2, pointRadius: 0, fill: true,
-                    backgroundColor: 'rgba(88, 166, 255, 0.05)', tension: 0.3
-                }]
+                labels: Array(100).fill(''),
+                datasets: [
+                    { label: 'Price', data: [], borderColor: '#f0f6fc', borderWidth: 2, pointRadius: 0, tension: 0.1, z: 10 },
+                    { label: 'B-Upper', data: [], borderColor: 'rgba(248, 81, 73, 0.3)', borderWidth: 1, borderDash: [5, 5], pointRadius: 0, fill: false },
+                    { label: 'B-Lower', data: [], borderColor: 'rgba(63, 185, 80, 0.3)', borderWidth: 1, borderDash: [5, 5], pointRadius: 0, fill: false },
+                    { label: 'EMA-Slow', data: [], borderColor: 'rgba(56, 139, 253, 0.4)', borderWidth: 1, pointRadius: 0, fill: false }
+                ]
             },
             options: {
-                responsive: true, maintainAspectRatio: false, animation: false,
-                scales: { x: { display: false }, y: { grid: { color: '#21262d' }, ticks: { color: '#8b949e', font: { size: 10 } }, position: 'right' } },
-                plugins: { legend: { display: false } }
+                responsive: true, maintainAspectRatio: false,
+                scales: {
+                    x: { display: false },
+                    y: { position: 'right', grid: { color: '#21262d' }, ticks: { color: '#8b949e', font: { size: 10 } } }
+                },
+                plugins: { legend: { display: false } },
+                animation: false
             }
         });
 
-        let lastHash = "";
-        db.ref('monitor').on('value', (snap) => {
-            const d = snap.val(); if(!d) return;
+        // --- SYNC ENGINE ---
+        let lastHistoryHash = "";
 
-            document.getElementById('moedas').innerText = Number(d.moedas).toLocaleString();
-            document.getElementById('glues').innerText = d.glues.toFixed(2);
-            document.getElementById('precoAtual').innerText = "C$ " + Number(d.precoAtual).toLocaleString();
-            document.getElementById('alvoCompra').innerText = d.alvoCompra.toFixed(0);
-            document.getElementById('alvoVenda').innerText = d.alvoVenda > 0 ? d.alvoVenda.toFixed(0) : "WAITING";
-            document.getElementById('clock').innerText = new Date(d.lastUpdate).toLocaleTimeString();
+        db.ref('sentinel_monitor').on('value', (snap) => {
+            const data = snap.val();
+            if (!data) return;
+
+            // Update Header & Regime
+            const regimeEl = document.getElementById('market-regime');
+            regimeEl.innerText = data.regime;
+            regimeEl.className = `px-4 py-1 rounded border text-xs font-bold regime-${data.regime.toLowerCase()}`;
+            document.getElementById('server-time').innerText = new Date(data.ts).toLocaleTimeString();
+
+            // Update Stats
+            document.getElementById('coins').innerText = Number(data.coins).toLocaleString();
+            document.getElementById('glues').innerText = data.glues.toFixed(2);
+            document.getElementById('avgPrice').innerText = data.avgPrice > 0 ? data.avgPrice.toFixed(0) : "N/A";
+            document.getElementById('current-price').innerText = "C$ " + data.price.toLocaleString();
             
-            // Aqui pegamos o preço médio do estado sincronizado
-            db.ref('estado_controlador/precoUltimaCompra').once('value', (s) => {
-                const avg = s.val() || 0;
-                document.getElementById('avgPrice').innerText = avg > 0 ? avg.toFixed(0) : "---";
-            });
+            // RSI Bar
+            const rsiVal = parseFloat(data.rsi);
+            document.getElementById('rsi-val').innerText = rsiVal.toFixed(0);
+            document.getElementById('rsi-bar').style.width = rsiVal + "%";
+            document.getElementById('rsi-bar').style.backgroundColor = rsiVal > 70 ? '#f85149' : (rsiVal < 30 ? '#3fb950' : '#388bfd');
 
-            if(d.hPreco) { marketChart.data.datasets[0].data = d.hPreco; marketChart.update('none'); }
+            // Chart Update (Rolling window)
+            const updateChart = (datasetIndex, value) => {
+                const ds = mainChart.data.datasets[datasetIndex].data;
+                ds.push(value);
+                if (ds.length > 100) ds.shift();
+            };
 
-            const currentHash = JSON.stringify(d.transacoes);
-            if(currentHash !== lastHash) {
-                lastHash = currentHash;
-                const html = d.transacoes.map(t => `
-                    <div class="flex justify-between items-center py-2 px-3 border-b border-[#21262d] last:border-0">
-                        <div class="flex items-center gap-3">
-                            <span class="w-1.5 h-1.5 rounded-full ${t.tipo.includes('SELL') ? 'bg-[#f85149]' : 'bg-[#3fb950]'}"></span>
-                            <span class="${t.tipo.includes('SELL') ? 'text-[#f85149]' : 'text-[#3fb950]'} font-bold">${t.tipo}</span>
-                            <span class="text-[#f0f6fc]">${t.qtd} un</span>
+            updateChart(0, data.price);
+            if (data.bands) {
+                updateChart(1, data.bands.top);
+                updateChart(2, data.bands.bot);
+            }
+            if (data.avgPrice) updateChart(3, data.avgPrice);
+            mainChart.update('none');
+
+            // History Update
+            const historyHash = JSON.stringify(data.history);
+            if (historyHash !== lastHistoryHash) {
+                lastHistoryHash = historyHash;
+                const container = document.getElementById('tx-history');
+                container.innerHTML = data.history.map(tx => `
+                    <div class="flex justify-between items-center py-2 px-4 border-b border-[#21262d] hover:bg-[#1c2128] transition-colors">
+                        <div class="flex items-center gap-4">
+                            <span class="font-bold ${tx.type.includes('BUY') ? 'text-green-500' : 'text-red-500'}">${tx.type}</span>
+                            <span class="text-gray-300">${tx.q} units</span>
                         </div>
-                        <div class="text-[#8b949e]">@ ${t.preco.toLocaleString()} <span class="ml-2 text-[#484f58] text-[9px]">${t.data}</span></div>
+                        <div class="flex gap-6">
+                            <span class="text-blue-400">@ ${tx.p.toLocaleString()}</span>
+                            <span class="text-gray-600 w-16 text-right">${tx.t}</span>
+                        </div>
                     </div>
                 `).join('');
-                document.getElementById('txLog').innerHTML = html;
             }
         });
     </script>
