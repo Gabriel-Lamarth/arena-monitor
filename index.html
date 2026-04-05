@@ -1,157 +1,78 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-<meta charset="UTF-8">
-<title>SENTINEL | Adaptive Dashboard</title>
-
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-<style>
-body { background: #0d1117; color: #c9d1d9; font-family: sans-serif; }
-.card { background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 1rem; }
-.status-badge { padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: bold; }
-</style>
+    <meta charset="UTF-8">
+    <title>SENTINEL | Adaptive Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { background: #0d1117; color: #c9d1d9; font-family: sans-serif; }
+        .card { background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 1rem; }
+        .status-badge { padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: bold; }
+    </style>
 </head>
-
 <body class="p-6">
-<div class="max-w-6xl mx-auto space-y-4">
+    <div class="max-w-6xl mx-auto space-y-4">
+        <div class="flex justify-between items-center border-b border-[#30363d] pb-4">
+            <h1 class="text-xl font-bold">Sentinel <span class="text-blue-400">v24.0</span></h1>
+            <div id="regime" class="status-badge bg-gray-700 text-white uppercase">Sincronizando...</div>
+        </div>
 
-<!-- HEADER -->
-<div class="flex justify-between items-center border-b border-[#30363d] pb-4">
-    <h1 class="text-xl font-bold">
-        Sentinel <span class="text-blue-400">v26.0</span>
-    </h1>
-    <div class="flex gap-2 items-center">
-        <div id="status" class="status-badge bg-gray-700">OFFLINE</div>
-        <div id="regime" class="status-badge bg-gray-700 uppercase">---</div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+            <div class="card"><p class="text-xs text-gray-400">MOEDAS</p><div id="moedas" class="text-2xl font-bold">---</div></div>
+            <div class="card"><p class="text-xs text-gray-400">GLUES</p><div id="glues" class="text-2xl font-bold text-blue-400">---</div></div>
+            <div class="card"><p class="text-xs text-gray-400">PREÇO ATUAL</p><div id="preco" class="text-2xl font-bold">---</div></div>
+        </div>
+
+        <div class="card h-80">
+            <canvas id="marketChart"></canvas>
+        </div>
+
+        <div class="card">
+            <h2 class="text-xs font-bold mb-3 text-gray-400">HISTÓRICO ADAPTATIVO</h2>
+            <div id="log" class="space-y-2 font-mono text-xs overflow-y-auto max-h-40"></div>
+        </div>
     </div>
-</div>
 
-<!-- MAIN METRICS -->
-<div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-    <div class="card"><p class="text-xs text-gray-400">MOEDAS</p><div id="moedas" class="text-2xl font-bold">---</div></div>
-    <div class="card"><p class="text-xs text-gray-400">GLUES</p><div id="glues" class="text-2xl font-bold text-blue-400">---</div></div>
-    <div class="card"><p class="text-xs text-gray-400">PREÇO</p><div id="preco" class="text-2xl font-bold">---</div></div>
-    <div class="card"><p class="text-xs text-gray-400">TAXA</p><div id="fee" class="text-2xl font-bold text-yellow-400">---</div></div>
-</div>
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCafWPTpVdi1WRIIXOmDTl7xqOzlXkkwz0",
+            databaseURL: "https://arenasentinel-cc345-default-rtdb.firebaseio.com",
+            projectId: "arenasentinel-cc345",
+            appId: "1:839795085957:web:ac787cc883563d40960fec"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
 
-<!-- INDICADORES -->
-<div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-    <div class="card"><p class="text-xs text-gray-400">RSI</p><div id="rsi" class="text-xl font-bold">---</div></div>
-    <div class="card"><p class="text-xs text-gray-400">SLOPE</p><div id="slope" class="text-xl font-bold">---</div></div>
-    <div class="card"><p class="text-xs text-gray-400">PREÇO MÉDIO</p><div id="avg" class="text-xl font-bold">---</div></div>
-    <div class="card"><p class="text-xs text-gray-400">INVENTÁRIO</p><div id="inv" class="text-xl font-bold">---</div></div>
-</div>
+        const ctx = document.getElementById('marketChart').getContext('2d');
+        const chart = new Chart(ctx, {
+            type: 'line',
+            data: { labels: Array(200).fill(''), datasets: [{ data: [], borderColor: '#58a6ff', pointRadius: 0, fill: true, backgroundColor: 'rgba(88,166,255,0.05)', tension: 0.2 }] },
+            options: { responsive: true, maintainAspectRatio: false, scales: { x: { display: false }, y: { position: 'right', grid: { color: '#21262d' } } }, plugins: { legend: { display: false } } }
+        });
 
-<!-- CHART -->
-<div class="card h-80">
-    <canvas id="marketChart"></canvas>
-</div>
+        db.ref('monitor').on('value', (snap) => {
+            const d = snap.val(); if(!d) return;
+            document.getElementById('moedas').innerText = d.moedas.toLocaleString();
+            document.getElementById('glues').innerText = d.glues.toFixed(2);
+            document.getElementById('preco').innerText = d.precoAtual.toLocaleString();
+            
+            const rg = document.getElementById('regime');
+            rg.innerText = d.regime;
+            rg.className = `status-badge ${d.regime === 'LATERAL' ? 'bg-blue-900' : (d.regime === 'ALTA' ? 'bg-green-900' : 'bg-red-900')}`;
 
-<!-- LOG -->
-<div class="card">
-    <h2 class="text-xs font-bold mb-3 text-gray-400">HISTÓRICO</h2>
-    <div id="log" class="space-y-2 font-mono text-xs overflow-y-auto max-h-40"></div>
-</div>
-
-</div>
-
-<script>
-// ================= FIREBASE =================
-const firebaseConfig = {
-    apiKey: "AIzaSyCafWPTpVdi1WRIIXOmDTl7xqOzlXkkwz0",
-    databaseURL: "https://arenasentinel-cc345-default-rtdb.firebaseio.com",
-    projectId: "arenasentinel-cc345",
-    appId: "1:839795085957:web:ac787cc883563d40960fec"
-};
-
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
-
-// ================= CHART =================
-const ctx = document.getElementById('marketChart').getContext('2d');
-
-const chart = new Chart(ctx, {
-    type: 'line',
-    data: {
-        labels: [],
-        datasets: [
-            {
-                label: 'Preço',
-                data: [],
-                borderColor: '#58a6ff',
-                pointRadius: 0,
-                tension: 0.2,
-                fill: true,
-                backgroundColor: 'rgba(88,166,255,0.05)'
-            }
-        ]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-            x: { display: false },
-            y: { position: 'right', grid: { color: '#21262d' } }
-        },
-        plugins: { legend: { display: false } }
-    }
-});
-
-// ================= UPDATE =================
-db.ref('monitor').on('value', (snap) => {
-    const d = snap.val();
-    if (!d) return;
-
-    // STATUS
-    const status = document.getElementById('status');
-    const delay = Date.now() - (d.lastUpdate || 0);
-
-    status.innerText = delay < 3000 ? "ONLINE" : "LENTO";
-    status.className = `status-badge ${delay < 3000 ? 'bg-green-900' : 'bg-yellow-900'}`;
-
-    // REGIME
-    const rg = document.getElementById('regime');
-    rg.innerText = d.regime || "---";
-    rg.className = `status-badge ${
-        d.regime === 'ALTA' ? 'bg-green-900' :
-        d.regime === 'BAIXA' ? 'bg-red-900' :
-        'bg-blue-900'
-    }`;
-
-    // VALORES
-    moedas.innerText = (d.moedas || 0).toLocaleString();
-    glues.innerText = (d.glues || 0).toFixed(2);
-    preco.innerText = (d.precoAtual || 0).toLocaleString();
-
-    fee.innerText = d.fee ? (d.fee * 100).toFixed(2) + "%" : "---";
-    rsi.innerText = d.rsi ? d.rsi.toFixed(1) : "---";
-    slope.innerText = d.slope ? d.slope.toFixed(5) : "---";
-
-    avg.innerText = d.avgPrice ? d.avgPrice.toLocaleString() : "---";
-    inv.innerText = d.inventory ? d.inventory.toFixed(2) : "---";
-
-    // CHART
-    if (d.hPreco) {
-        chart.data.labels = d.hPreco.map(() => "");
-        chart.data.datasets[0].data = d.hPreco;
-        chart.update('none');
-    }
-
-    // LOG
-    if (d.transacoes) {
-        log.innerHTML = d.transacoes.map(t => `
-            <div class="flex justify-between border-b border-[#21262d] pb-1">
-                <span class="${t.tipo.includes('BUY') ? 'text-green-400' : 'text-red-400'}">${t.tipo}</span>
-                <span>${t.qtd} @ ${t.preco.toLocaleString()}</span>
-                <span class="text-gray-600">${t.data}</span>
-            </div>
-        `).join('');
-    }
-});
-</script>
+            if(d.hPreco) { chart.data.datasets[0].data = d.hPreco; chart.update('none'); }
+            
+            document.getElementById('log').innerHTML = d.transacoes.map(t => `
+                <div class="flex justify-between border-b border-[#21262d] pb-1">
+                    <span class="${t.tipo.includes('BUY') ? 'text-green-400' : 'text-red-400'}">${t.tipo}</span>
+                    <span>${t.qtd} un @ ${t.preco.toLocaleString()}</span>
+                    <span class="text-gray-600">${t.data}</span>
+                </div>
+            `).join('');
+        });
+    </script>
 </body>
 </html>
